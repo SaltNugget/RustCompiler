@@ -1,0 +1,80 @@
+#!/usr/bin/env python3
+
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+EXE_EXT = ".exe" if sys.platform == "win32" else ""
+
+
+def compile_file(f: Path) -> bool:
+    out = f.with_suffix(EXE_EXT)
+    try:
+        r = subprocess.run(["rustc", str(f), "-o", str(out)])
+    except KeyboardInterrupt:
+        out.unlink(missing_ok=True)
+        print(f"interrupted: {f.name}")
+        raise
+    print(f"{'ok' if r.returncode == 0 else 'FAIL'}: {f.name}")
+    return r.returncode == 0
+
+
+def compile_cargo(folder: Path) -> bool:
+    r = subprocess.run(["cargo", "build", "--release"], cwd=folder)
+    print(f"{'ok' if r.returncode == 0 else 'FAIL'}: cargo build")
+    return r.returncode == 0
+
+
+def handle(path: Path) -> bool:
+    if path.is_file() and path.suffix == ".rs":
+        compile_file(path)
+        return True
+
+    if path.is_dir():
+        if (path / "Cargo.toml").exists():
+            compile_cargo(path)
+        else:
+            files = list(path.glob("*.rs"))
+            if not files:
+                print("no .rs files found")
+                return False
+            ok = 0
+            done = 0
+            try:
+                for f in files:
+                    if compile_file(f):
+                        ok += 1
+                    done += 1
+            except KeyboardInterrupt:
+                print(f"stopped: {done}/{len(files)} finished")
+                raise
+            print(f"{ok} ok, {done - ok} failed")
+        return True
+
+    print("not a .rs file or folder")
+    return False
+
+
+def main():
+    if not shutil.which("rustc") or not shutil.which("cargo"):
+        print("rustc/cargo not found, install via https://rustup.rs")
+        return
+
+    try:
+        if len(sys.argv) > 1:
+            raw = " ".join(sys.argv[1:])
+            handle(Path(raw.strip().strip('"').strip("'")).expanduser())
+            return
+
+        while True:
+            raw = input("Path to .rs file or folder or CTRL+C to exit: ")
+            if handle(Path(raw.strip().strip('"').strip("'")).expanduser()):
+                break
+    except (KeyboardInterrupt, EOFError):
+        print("\nOk Exiting")
+
+
+if __name__ == "__main__":
+    main()
+#   MADE BY SALTNUGGET  #
