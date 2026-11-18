@@ -1,8 +1,6 @@
 # RustCompiler
 
-Quick Rust compile tool. Point it at a `.rs` file or a folder and it builds for you. 
-
-I made this cuz im learning rust and I hate the compile process so why not make it automatic and more simple
+Quick Rust compile tool. Point it at a `.rs` file or a folder and it builds for you. I made this cuz im learning rust and I hate the compile process so why not make it automatic and more simple.
 
 ## Requirements
 
